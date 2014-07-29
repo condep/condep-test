@@ -70,10 +70,6 @@
     <Compile Include="LogConfigLoader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Reset\CmdResetHandler.cs" />
-    <Compile Include="Reset\CmdResetHelpWriter.cs" />
-    <Compile Include="Reset\CmdResetParser.cs" />
-    <Compile Include="Reset\CmdResetValidator.cs" />
     <Compile Include="Terminate\CmdTerminateHandler.cs" />
     <Compile Include="Terminate\CmdTerminateHelpWriter.cs" />
     <Compile Include="Terminate\CmdTerminateParser.cs" />

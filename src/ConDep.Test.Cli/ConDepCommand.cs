@@ -4,6 +4,7 @@ namespace ConDep.Test.Cli
     {
         NotFound,
         Bootstrap,
-        Test
+        Test,
+        Help
     }
 }

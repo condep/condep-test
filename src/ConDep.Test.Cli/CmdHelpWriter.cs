@@ -38,7 +38,6 @@ Usage: ConDepTest <command> <options>
 Available commands:
     Bootstrap        Bootstrap servers for use with integration testing
     Terminate        Terminate allready bootstrapped servers
-    Reset            Reset bootstrapped servers back to initial state
     Test             Execute integration tests
     Help <command>   Display help for individual help commands
 ";
@@ -79,6 +78,9 @@ Copyright (c) Jon Arild Torresdal
                     commandHandler = null;
                     break;
                 case ConDepCommand.Test:
+                    commandHandler = null;
+                    break;
+                case ConDepCommand.Help:
                     commandHandler = null;
                     break;
                 default:
