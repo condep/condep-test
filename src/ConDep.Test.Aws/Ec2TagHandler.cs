@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
@@ -14,27 +15,23 @@ namespace ConDep.Test.Aws
             _client = client;
         }
 
-        public string CreateInstanceNameTags(string bootstrapId, IEnumerable<string> instanceIds)
+        public string CreateNameTags(string bootstrapId, IEnumerable<string> ids)
         {
             var tag = TAG_NAME_PREFIX + bootstrapId;
 
             var tagRequest = new CreateTagsRequest();
-            tagRequest.Resources.AddRange(instanceIds);
+            tagRequest.Resources.AddRange(ids);
 
             tagRequest.Tags.Add(new Tag { Key = "Name", Value = tag });
-            _client.CreateTags(tagRequest);
-            return tag;
-        }
-
-        public string CreateSnapshotNameTags(string bootstrapId, IEnumerable<string> snapshotIds)
-        {
-            var tag = TAG_NAME_PREFIX + bootstrapId;
-
-            var tagRequest = new CreateTagsRequest();
-            tagRequest.Resources.AddRange(snapshotIds);
-
-            tagRequest.Tags.Add(new Tag { Key = "Name", Value = tag });
-            _client.CreateTags(tagRequest);
+            try
+            {
+                _client.CreateTags(tagRequest);
+            }
+            catch
+            {
+                Thread.Sleep(5000);
+                _client.CreateTags(tagRequest);
+            }
             return tag;
         }
 

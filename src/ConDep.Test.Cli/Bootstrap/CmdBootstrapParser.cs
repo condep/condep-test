@@ -16,6 +16,7 @@ namespace ConDep.Test.Cli.Bootstrap
             _optionSet = new OptionSet
             {
                 {"n=|numOfInstances", "Number of instances.", v => _options.NumOfInstances = Convert.ToInt32(v)},
+                {"a=|amiId", "Id for the AMI to use", v => _options.AmiId = v},
                 {"i=|instanceType", "Type of instance (default t2.micro)", v => _options.InstanceType = v},
                 {"s=|securityGroup", "The security group to use (by default a new security group will be created)", v => _options.SecurityGroup = v}
             };

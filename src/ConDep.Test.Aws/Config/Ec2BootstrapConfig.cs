@@ -20,6 +20,8 @@ namespace ConDep.Test.Aws.Config
 
         public string VpcId { get; set; }
         public string AwsProfileName { get; set; }
+        public string SecurityGroupId { get; set; }
+        public string SecurityGroupTag { get; set; }
     }
 
     public class Ec2Instance

@@ -40,6 +40,7 @@ namespace ConDep.Test.Aws
                 }
             };
             var instances = _client.DescribeInstances(instancesRequest);
+            Logger.Info("Found instances: {0}", string.Join(", ", instances.Reservations.SelectMany(x => x.Instances.Select(y => y.InstanceId))));
             return instances.Reservations.SelectMany(x => x.Instances);
         }
 
@@ -129,9 +130,16 @@ netsh advfirewall firewall add rule name=""WinRM Public in"" protocol=TCP dir=in
             var instances = GetInstances(instanceIds).ToList();
             var states = instances.Select(y => y.State);
 
+            Logger.WithLogSection("Status of instances", () =>
+            {
+                foreach (var instance in instances)
+                {
+                    Logger.Info("Instance Id: {0}  Status: {1}", instance.InstanceId, instance.State.Name);
+                }
+            });
+
             if (states.Any(x => x.Name != "terminated"))
             {
-                Logger.Info("Instance still terminating. Waiting another 5 seconds...");
                 Thread.Sleep(5000);
                 WaitForInstancesToTerminate(instanceIds);
             }

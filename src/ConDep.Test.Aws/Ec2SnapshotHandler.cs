@@ -43,7 +43,7 @@ namespace ConDep.Test.Aws
             }
 
             var snapshotIds = config.Instances.SelectMany(x => x.BaseSnapshots.Select(y => y.SnapshotId)).ToList();
-            _tagHandler.CreateSnapshotNameTags(config.BootstrapId, snapshotIds);
+            _tagHandler.CreateNameTags(config.BootstrapId, snapshotIds);
 
             Logger.WithLogSection("Waiting for snapshots to finish", () => WaitForSnapshotsToFinish(snapshotIds));
         }

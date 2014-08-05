@@ -1,34 +1,54 @@
 ﻿using System.IO;
+using System.Resources;
+using ConDep.Test.Aws.Logging;
 using Newtonsoft.Json;
 
 namespace ConDep.Test.Aws.Config
 {
     public class BootstrapConfigHandler
     {
-        private readonly string _bootstrapId;
         private JsonSerializerSettings _jsonSettings;
+        private string _filePath;
 
         public BootstrapConfigHandler(string bootstrapId)
         {
-            _bootstrapId = bootstrapId;
+            _filePath = GetFilePath(bootstrapId);
         }
 
-        public void Write(string dirPath, dynamic config)
+        private static string GetFilePath(string bootstrapId)
         {
-            var filePath = Path.Combine(dirPath, _bootstrapId + ".json");
-            File.WriteAllText(filePath, ConvertToJsonText(config));
+            return Path.Combine(@"C:\temp\", bootstrapId + ".json");
         }
 
-        public Ec2BootstrapConfig GetTypedEnvConfig(string filePath)
+        public void Write(dynamic config)
+        {
+            File.WriteAllText(_filePath, ConvertToJsonText(config));
+        }
+
+        public Ec2BootstrapConfig GetTypedEnvConfig()
+        {
+            ValidatePath(_filePath);
+
+            using (var fileStream = File.OpenRead(_filePath))
+            {
+                return GetTypedEnvConfig(fileStream);
+            }
+        }
+
+        public static void DeleteConfigFile(string bootstrapId)
+        {
+            var fileName = GetFilePath(bootstrapId);
+            Logger.Info("Deleting {0}", fileName);
+            ValidatePath(fileName);
+            File.Delete(fileName);
+            Logger.Info("Config {0} deleted", fileName);
+        }
+
+        private static void ValidatePath(string filePath)
         {
             if (!File.Exists(filePath))
             {
                 throw new FileNotFoundException(string.Format("[{0}] not found.", filePath), filePath);
-            }
-
-            using (var fileStream = File.OpenRead(filePath))
-            {
-                return GetTypedEnvConfig(fileStream);
             }
         }
 
@@ -68,6 +88,7 @@ namespace ConDep.Test.Aws.Config
                 return _jsonSettings ?? (_jsonSettings = new JsonSerializerSettings
                 {
                     NullValueHandling = NullValueHandling.Ignore,
+                    MissingMemberHandling = MissingMemberHandling.Ignore,
                     Formatting = Formatting.Indented,
                 });
             }

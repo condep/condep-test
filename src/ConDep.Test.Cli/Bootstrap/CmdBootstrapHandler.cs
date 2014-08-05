@@ -26,8 +26,16 @@ namespace ConDep.Test.Cli.Bootstrap
                 var options = _parser.Parse();
                 _validator.Validate(options);
 
-                var amiLocator = new Ec2AmiLocator(options.AwsProfileName);
-                var ami = amiLocator.Find2012R2Core();
+                string ami;
+                if (string.IsNullOrWhiteSpace(options.AmiId))
+                {
+                    var amiLocator = new Ec2AmiLocator(options.AwsProfileName);
+                    ami = amiLocator.Find2012R2Core();
+                }
+                else
+                {
+                    ami = options.AmiId;
+                }
 
                 var bootstrapper = new Ec2Bootstrapper(options.AwsProfileName);
                 var bootstrapId = bootstrapper.Boostrap(options.VpcId, ami, options.NumOfInstances == 0 ? 1 : options.NumOfInstances, options.RsaPrivateKeyPath);

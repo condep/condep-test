@@ -1,7 +1,10 @@
+using System.Collections.Generic;
 using System.Linq;
 using Amazon;
 using Amazon.EC2;
+using Amazon.EC2.Model;
 using Amazon.Runtime;
+using ConDep.Test.Aws.Config;
 using ConDep.Test.Aws.Logging;
 
 namespace ConDep.Test.Aws
@@ -27,12 +30,17 @@ namespace ConDep.Test.Aws
 
         public void Terminate(string bootstrapId, string vpcId)
         {
-            Logger.Info("Getting instances");
-            var instances = _instanceHandler.GetInstances(bootstrapId, vpcId);
+            IEnumerable<Instance> instances = null;
+            Logger.WithLogSection("Getting instances", () =>
+            {
+                instances = _instanceHandler.GetInstances(bootstrapId, vpcId);
+            });
 
             _instanceHandler.Terminate(bootstrapId, vpcId);
             _snapshotHandler.TerminateSnapshots(instances.SelectMany(y => y.BlockDeviceMappings.Select(z => z.Ebs.VolumeId)));
             _securityGroupHandler.DeleteSecurityGroup(bootstrapId);
+
+            Logger.WithLogSection("Delete config file", () => BootstrapConfigHandler.DeleteConfigFile(bootstrapId));
         }
     }
 }

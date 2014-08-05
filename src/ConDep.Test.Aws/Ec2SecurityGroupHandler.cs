@@ -61,6 +61,16 @@ namespace ConDep.Test.Aws
                         {
                             publicIp
                         }
+                    },
+                    new IpPermission
+                    {
+                        FromPort = 1024,
+                        ToPort = 65535,
+                        IpProtocol = "tcp",
+                        IpRanges = new List<string>
+                        {
+                            "0.0.0.0/0"
+                        }
                     }
                 }
             };

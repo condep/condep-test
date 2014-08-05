@@ -45,11 +45,16 @@ namespace ConDep.Test.Aws
 
             Logger.Info("Creating security group...");
             var securityGroupId = _securityGroupHandler.CreateSecurityGroup(vpcId, config.BootstrapId);
+            var securityGroupTag = _tagHandler.CreateNameTags(config.BootstrapId, new[] {securityGroupId});
+
+            config.SecurityGroupId = securityGroupId;
+            config.SecurityGroupTag = securityGroupTag;
+
             Logger.Info("Creating instances...");
             var instanceIds = _instanceHandler.CreateInstances(config.BootstrapId, imageId, numberOfInstances, securityGroupId).ToList();
 
             Logger.Info("Tagging instances...");
-            var tag = _tagHandler.CreateInstanceNameTags(config.BootstrapId, instanceIds);
+            var instanceTag = _tagHandler.CreateNameTags(config.BootstrapId, instanceIds);
 
             Logger.WithLogSection("Waiting for instances to be ready", () => _instanceHandler.WaitForInstancesStatus(instanceIds, Ec2InstanceState.Running));
 
@@ -69,7 +74,7 @@ namespace ConDep.Test.Aws
                     InstanceId = instance.InstanceId,
                     PublicDns = instance.PublicDnsName,
                     PublicIp = instance.PublicIpAddress,
-                    Tag = tag,
+                    Tag = instanceTag,
                     UserName = "Administrator",
                     Password = passwords.Single(x => x.Item1 == instance.InstanceId).Item2
                 });
@@ -92,7 +97,7 @@ namespace ConDep.Test.Aws
 
             Logger.Info("Storing configuration...");
             var configHandler = new BootstrapConfigHandler(config.BootstrapId);
-            configHandler.Write(@"C:\temp\", config);
+            configHandler.Write(config);
             return config.BootstrapId;
         }
 
@@ -130,56 +135,58 @@ namespace ConDep.Test.Aws
             {
                 foreach (var instance in config.Instances)
                 {
-                    HaveAccessToServer(instance, 5);
+                    HaveAccessToServer(instance, 1, 5);
                 }
             });
         }
-        private static void HaveAccessToServer(Ec2Instance instance, int numOfRetries)
+        private static void HaveAccessToServer(Ec2Instance instance, int attemptNum, int numOfRetries)
         {
-            Logger.Info(
-                string.Format("({1}/5) Checking if WinRM (Remote PowerShell) can be used to reach remote server [{0}]...",
-                              instance.PublicDns, numOfRetries));
-            var cmd = string.Format("id -r:{0} -u:{1} -p:\"{2}\"", instance.PublicDns, instance.UserName, instance.Password);
+            Logger.WithLogSection(
+                string.Format("({1}/{2}) Checking if WinRM (Remote PowerShell) can be used to reach remote server [{0}]...",
+                              instance.PublicDns, attemptNum, numOfRetries), () =>
+                              {
+                                  var cmd = string.Format("id -r:{0} -u:{1} -p:\"{2}\"", instance.PublicDns, instance.UserName, instance.Password);
 
-            var path = Environment.ExpandEnvironmentVariables(@"%windir%\system32\WinRM.cmd");
-            var startInfo = new ProcessStartInfo(path)
-            {
-                Arguments = cmd,
-                Verb = "RunAs",
-                UseShellExecute = false,
-                WindowStyle = ProcessWindowStyle.Hidden,
-                RedirectStandardError = true,
-                RedirectStandardOutput = true
-            };
-            var process = Process.Start(startInfo);
-            process.WaitForExit();
+                                  var path = Environment.ExpandEnvironmentVariables(@"%windir%\system32\WinRM.cmd");
+                                  var startInfo = new ProcessStartInfo(path)
+                                  {
+                                      Arguments = cmd,
+                                      Verb = "RunAs",
+                                      UseShellExecute = false,
+                                      WindowStyle = ProcessWindowStyle.Hidden,
+                                      RedirectStandardError = true,
+                                      RedirectStandardOutput = true
+                                  };
+                                  var process = Process.Start(startInfo);
+                                  process.WaitForExit();
 
-            if (process.ExitCode == 0)
-            {
-                var message = process.StandardOutput.ReadToEnd();
-                Logger.Info(string.Format("Contact was made with server [{0}] using WinRM (Remote PowerShell). ",
-                                          instance.PublicDns));
-                Logger.Verbose(string.Format("Details: {0} ", message));
-            }
-            else
-            {
-                var errorMessage = process.StandardError.ReadToEnd();
-                if (numOfRetries > 0)
-                {
-                    Logger.Warn(string.Format("Unable to reach server [{0}] using WinRM (Remote PowerShell)",
-                        instance.PublicDns));
-                    Logger.Info("Waiting 30 seconds before retry...");
-                    Thread.Sleep(30000);
-                    HaveAccessToServer(instance, --numOfRetries);
-                }
-                else
-                {
-                    Logger.Error(string.Format("Unable to reach server [{0}] using WinRM (Remote PowerShell)",
-                        instance.PublicDns));
-                    Logger.Error(string.Format("Details: {0}", errorMessage));
-                    Logger.Error("Max number of retries exceeded. Please check your Amazon Network firewall for why WinRM cannot connect.");
-                }
-            }
+                                  if (process.ExitCode == 0)
+                                  {
+                                      var message = process.StandardOutput.ReadToEnd();
+                                      Logger.Info(string.Format("Contact was made with server [{0}] using WinRM (Remote PowerShell). ",
+                                                                instance.PublicDns));
+                                      Logger.Info(string.Format("Details: {0} ", message));
+                                  }
+                                  else
+                                  {
+                                      var errorMessage = process.StandardError.ReadToEnd();
+                                      if (numOfRetries > 0)
+                                      {
+                                          Logger.Info(string.Format("Unable to reach server [{0}] using WinRM (Remote PowerShell)",
+                                              instance.PublicDns));
+                                          Logger.Info("Waiting 30 seconds before retry...");
+                                          Thread.Sleep(30000);
+                                          HaveAccessToServer(instance, ++attemptNum, --numOfRetries);
+                                      }
+                                      else
+                                      {
+                                          Logger.Error(string.Format("Unable to reach server [{0}] using WinRM (Remote PowerShell)",
+                                              instance.PublicDns));
+                                          Logger.Error(string.Format("Details: {0}", errorMessage));
+                                          Logger.Error("Max number of retries exceeded. Please check your Amazon Network firewall for why WinRM cannot connect.");
+                                      }
+                                  }
+                              });
         }
     }
 }

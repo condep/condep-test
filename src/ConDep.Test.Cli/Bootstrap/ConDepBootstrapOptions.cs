@@ -8,5 +8,6 @@ namespace ConDep.Test.Cli.Bootstrap
         public string AwsProfileName { get; set; }
         public string VpcId { get; set; }
         public string RsaPrivateKeyPath { get; set; }
+        public string AmiId { get; set; }
     }
 }

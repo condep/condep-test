@@ -37,7 +37,7 @@ namespace ConDep.Test.Cli.Terminate
         private Ec2BootstrapConfig LoadConfig(string bootstrapId)
         {
             var configHandler = new BootstrapConfigHandler(bootstrapId);
-            return configHandler.GetTypedEnvConfig(Path.Combine(@"C:\temp\", bootstrapId + ".json"));
+            return configHandler.GetTypedEnvConfig();
         }
 
         public void WriteHelp()
